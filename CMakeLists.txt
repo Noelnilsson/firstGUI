@@ -7,6 +7,7 @@ include(FetchContent)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Build wxWidgets as a static library
 set(wxBUILD_SHARED OFF)
 
 message(STATUS "Fetching wxWidgets...")
@@ -18,10 +19,21 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(wxWidgets)
 
-set(SRCS main.cpp)
+#-------------------------------------------------------------
+# IMPORTANT: Include *all* of your .cpp files here
+#-------------------------------------------------------------
+set(SRCS
+    main.cpp
+    simpleParticle.cpp
+)
 
+# Build the executable named "main"
 add_executable(main WIN32 ${SRCS})
-target_link_libraries(main PRIVATE wxcore wxnet)
 
-
-#https://stackoverflow.com/questions/56329088/cmake-fetchcontent-downloads-external-dependencies-multiple-times
+# Link against the needed wxWidgets libraries
+# You likely also want wxbase in addition to wxcore, wxnet, etc.
+target_link_libraries(main PRIVATE 
+    wx::base 
+    wx::core 
+    wx::adv  # For wxTimer and other advanced features
+)
