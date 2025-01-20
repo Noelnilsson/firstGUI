@@ -6,6 +6,7 @@
 #include <chrono>
 
 #define PARTICLE_SIZE 10
+#define PARTICLE_SPEED 1.0
 
 class ParticleSimPanel : public wxPanel
 {
@@ -36,12 +37,12 @@ public:
             std::random_device rd;
             std::mt19937 gen(rd());
             std::uniform_int_distribution<int> distXY(-500, 500);
-            std::uniform_int_distribution<int> distDIR(-1, 1);
+            std::uniform_real_distribution<float> distDIR(-PARTICLE_SPEED, PARTICLE_SPEED);
 
             for (int i = 0; i < 10; ++i)
             {
-                int directionX = distDIR(gen);
-                int directionY = distDIR(gen);
+                float directionX = distDIR(gen);
+                float directionY = distDIR(gen);
                 if (directionX == 0)
                     directionX = (gen() % 2 == 0) ? 1 : -1;
                 if (directionY == 0)
@@ -76,12 +77,12 @@ public:
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<int> distXY(-500, 500);
-        std::uniform_int_distribution<int> distDIR(-2, 2);
+        std::uniform_real_distribution<float> distDIR(-PARTICLE_SPEED, PARTICLE_SPEED);
 
         for (int i = 0; i < number; i++)
         {
-            int directionX = distDIR(gen);
-            int directionY = distDIR(gen);
+            float directionX = distDIR(gen);
+            float directionY = distDIR(gen);
             if (directionX == 0)
                 directionX = (gen() % 2 == 0) ? 1 : -1;
             if (directionY == 0)
@@ -111,8 +112,8 @@ private:
     {
         int positionX;
         int positionY;
-        int directionX;
-        int directionY;
+        float directionX;
+        float directionY;
     };
 
     std::vector<Rectangle> rectangles;
@@ -131,16 +132,25 @@ private:
         dc.SetBrush(*wxBLUE_BRUSH);
         dc.SetPen(*wxBLACK_PEN);
 
+        int colorConstant = 255 / std::sqrt(2 * PARTICLE_SPEED * PARTICLE_SPEED); // Max speed to scale color
+
         for (const auto &rect : rectangles)
         {
+
+            float speed = std::sqrt(rect.directionX * rect.directionX + rect.directionY * rect.directionY);
+            int colorIntensity = std::min(255, static_cast<int>(colorConstant * speed)); // Scale speed to [0, 255]
+            wxColour color(colorIntensity, 0, 255 - colorIntensity);                     // Gradient from red to blue
+            dc.SetBrush(wxBrush(color));
+
             dc.DrawRectangle(rect.positionX, rect.positionY, PARTICLE_SIZE, PARTICLE_SIZE);
         }
 
         dc.SetFont(wxFont(14, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
+        dc.SetBackgroundMode(wxBRUSHSTYLE_SOLID);
+        dc.SetTextBackground(*wxLIGHT_GREY);
         dc.SetTextForeground(*wxRED);
         dc.DrawText(wxString::Format("FPS: %.2f", fps), 10, 30);
         dc.DrawText(wxString::Format("Particles: %zu", getParticleCount()), 10, 60);
-        // dc.DrawText(wxString::Format("Particles: %d", rectangles.size()), 10, 60);
     }
 
     void OnTimer(wxTimerEvent &event)
